@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import Header from '../components/layout/Header';
 
@@ -123,7 +123,7 @@ const GameSetup = () => {
     };
     
     fetchPatterns();
-  }, []);
+  }, [defaultPatterns]);
   
   // Create a new game
   const handleCreateGame = async (e) => {
