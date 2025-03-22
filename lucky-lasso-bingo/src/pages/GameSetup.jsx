@@ -20,6 +20,9 @@ const GameSetup = () => {
   const [patternId, setPatternId] = useState('');
   const [prize, setPrize] = useState('');
   const [creating, setCreating] = useState(false);
+  const [existingGames, setExistingGames] = useState([]);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [isNewGame, setIsNewGame] = useState(true);
   
   // Pattern state
   const [patterns, setPatterns] = useState([]);
@@ -34,7 +37,7 @@ const GameSetup = () => {
     { id: 'blackout', name: 'Blackout', description: 'All squares marked' }
   ];
   
-  // Fetch event details
+  // Fetch event details and unstarted games
   useEffect(() => {
     const fetchEventDetails = async () => {
       if (!eventId) {
@@ -56,8 +59,24 @@ const GameSetup = () => {
           };
           
           setEventDetails(eventData);
-          // Set default game number based on previous games (for now just 1)
-          setGameNumber('1');
+          
+          // Fetch unstarted games for this event
+          const gamesQuery = query(
+            collection(db, 'games'),
+            where('eventId', '==', eventId),
+            where('status', '==', 'ready')
+          );
+          
+          const gamesSnapshot = await getDocs(gamesQuery);
+          const unstartedGames = gamesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          setExistingGames(unstartedGames);
+          
+          // Set default game number based on previous games
+          setGameNumber(String(unstartedGames.length + 1));
         } else {
           setError('Event not found');
         }
@@ -170,12 +189,75 @@ const GameSetup = () => {
     return (
       <div className="min-h-screen bg-ivory">
         <Header title="Game Setup" />
-        <div className="container mx-auto p-6 text-center">
+        <div className="max-w-7xl mx-auto p-6 text-center">
           <p className="text-deep-sage">Loading...</p>
         </div>
       </div>
     );
   }
+
+  const handleGameSelection = (game) => {
+    setSelectedGame(game);
+    setIsNewGame(false);
+    setGameNumber(String(game.gameNumber));
+    setPatternType(game.patternId);
+    setPatternId(game.patternId);
+    setPrize(game.prize);
+  };
+
+  const handleNewGameClick = () => {
+    setSelectedGame(null);
+    setIsNewGame(true);
+    setGameNumber(String(existingGames.length + 1));
+    setPatternType(patterns[0]?.id || '');
+    setPatternId(patterns[0]?.id || '');
+    setPrize('');
+  };
+
+  const renderGameSelection = () => (
+    <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold text-deep-sage mb-4">Select Game</h2>
+      <div className="flex space-x-4 mb-6">
+        <button
+          onClick={handleNewGameClick}
+          className={`px-4 py-2 rounded ${isNewGame ? 'bg-bluebell text-white' : 'bg-gray-200 text-deep-sage'}`}
+        >
+          Create New Game
+        </button>
+        {existingGames.length > 0 && (
+          <button
+            onClick={() => setIsNewGame(false)}
+            className={`px-4 py-2 rounded ${!isNewGame ? 'bg-bluebell text-white' : 'bg-gray-200 text-deep-sage'}`}
+          >
+            Use Existing Game
+          </button>
+        )}
+      </div>
+
+      {!isNewGame && existingGames.length > 0 && (
+        <div className="grid gap-4">
+          {existingGames.map((game) => (
+            <div
+              key={game.id}
+              onClick={() => handleGameSelection(game)}
+              className={`p-4 rounded-lg border cursor-pointer transition-colors ${selectedGame?.id === game.id ? 'border-bluebell bg-bluebell bg-opacity-10' : 'border-gray-200 hover:border-bluebell'}`}
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-medium text-deep-sage">Game {game.gameNumber}</h3>
+                  <p className="text-sm text-gray-600">{game.patternName}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-olivine">{game.prize}</p>
+                  <p className="text-xs text-gray-500">Ready to start</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
   
   if (error) {
     return (
@@ -199,8 +281,87 @@ const GameSetup = () => {
   return (
     <div className="min-h-screen bg-ivory">
       <Header title="Game Setup" />
-      
-      <div className="container mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
+        {renderGameSelection()}
+        {isNewGame ? (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-deep-sage mb-4">Create New Game</h2>
+            <form onSubmit={handleCreateGame}>
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-deep-sage font-medium mb-2">Game Number</label>
+                  <input
+                    type="number"
+                    value={gameNumber}
+                    onChange={(e) => setGameNumber(e.target.value)}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-deep-sage font-medium mb-2">Pattern</label>
+                  <select
+                    value={patternType}
+                    onChange={handlePatternChange}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
+                    required
+                  >
+                    {patterns.map(pattern => (
+                      <option key={pattern.id} value={pattern.id}>
+                        {pattern.name} {pattern.difficulty ? `(Difficulty: ${pattern.difficulty})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-deep-sage font-medium mb-2">Prize</label>
+                  <input
+                    type="text"
+                    value={prize}
+                    onChange={(e) => setPrize(e.target.value)}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
+                    placeholder="e.g. $50"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="w-full bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90 disabled:opacity-50"
+                >
+                  {creating ? 'Creating...' : 'Create Game'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-deep-sage mb-4">Start Existing Game</h2>
+            {selectedGame ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-deep-sage">Selected Game Details</h3>
+                  <p className="text-gray-600">Game {selectedGame.gameNumber}</p>
+                  <p className="text-gray-600">Pattern: {selectedGame.patternName}</p>
+                  <p className="text-gray-600">Prize: {selectedGame.prize}</p>
+                </div>
+                <button
+                  onClick={() => navigate(`/game/${selectedGame.id}`)}
+                  className="w-full bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90"
+                >
+                  Start Game
+                </button>
+              </div>
+            ) : (
+              <p className="text-gray-600">Please select a game from the list above</p>
+            )}
+          </div>
+        )}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-deep-sage mb-4">Start New Game</h2>
           

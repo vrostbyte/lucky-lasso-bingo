@@ -37,8 +37,8 @@ const Header = ({ title, showLogout = true }) => {
   };
 
   return (
-    <header className="bg-deep-sage text-white p-4 rounded-lg shadow-md mb-6 mt-6">
-      <div className="container mx-auto flex justify-between items-center">
+    <header className="bg-deep-sage text-white p-4 rounded-lg shadow-md mb-6 mt-6 mx-auto max-w-7xl">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Lucky Lasso Bingo</h1>
         <div className="flex items-center">
           {title && <span className="mr-6 font-medium">{title}</span>}

@@ -15,6 +15,7 @@ const PatternCreator = () => {
   // Pattern details
   const [patternName, setPatternName] = useState('');
   const [patternDescription, setPatternDescription] = useState('');
+  const [patternDifficulty, setPatternDifficulty] = useState(5);
   const [saving, setSaving] = useState(false);
   
   // Saved patterns list
@@ -174,6 +175,7 @@ const PatternCreator = () => {
         name: patternName,
         description: patternDescription,
         grid: flatGrid,
+        difficulty: patternDifficulty,
         createdBy: auth.currentUser?.uid || 'anonymous',
         createdAt: serverTimestamp()
       };
@@ -227,6 +229,24 @@ const PatternCreator = () => {
       <Header title="Pattern Creator" />
       
       <main className="container mx-auto p-4">
+        {/* Pattern Difficulty Selector */}
+        <div className="mb-6 bg-white p-4 rounded-lg shadow-md">
+          <label className="block text-deep-sage font-medium mb-2">Pattern Difficulty</label>
+          <div className="flex items-center space-x-4">
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={patternDifficulty}
+              onChange={(e) => setPatternDifficulty(parseInt(e.target.value))}
+              className="w-full h-2 bg-olivine rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-deep-sage font-medium">{patternDifficulty}</span>
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            {patternDifficulty <= 3 ? "Easy" : patternDifficulty <= 6 ? "Medium" : "Hard"}
+          </p>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Pattern Editor */}
           <div className="lg:col-span-2">

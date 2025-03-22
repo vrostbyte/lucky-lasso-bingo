@@ -17,7 +17,11 @@ const EventDetails = () => {
     digitalTips: 0,
     cashTips: 0,
     cardPrice: 1,
-    dauberPrice: 2
+    dauberPrice: 2,
+    roundingLoss: 0,
+    totalPayout: 0,
+    totalRevenue: 0,
+    profit: 0
   });
 
   useEffect(() => {
@@ -173,8 +177,101 @@ const EventDetails = () => {
   return (
     <div className="min-h-screen bg-ivory">
       <Header title={`Event: ${event.name}`} />
-      <div className="container mx-auto p-4">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="max-w-7xl mx-auto p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-bold text-deep-sage mb-4">Sales Tracker</h2>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Card Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full p-2 border rounded"
+                  value={sales.cardPrice}
+                  onChange={(e) => handleSalesChange('cardPrice', parseFloat(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Dauber Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full p-2 border rounded"
+                  value={sales.dauberPrice}
+                  onChange={(e) => handleSalesChange('dauberPrice', parseFloat(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Cards Sold</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={sales.cardsSold}
+                  onChange={(e) => handleSalesChange('cardsSold', parseInt(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Daubers Sold</label>
+                <input
+                  type="number"
+                  className="w-full p-2 border rounded"
+                  value={sales.daubersSold}
+                  onChange={(e) => handleSalesChange('daubersSold', parseInt(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Digital Tips ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full p-2 border rounded"
+                  value={sales.digitalTips}
+                  onChange={(e) => handleSalesChange('digitalTips', parseFloat(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-deep-sage mb-1">Cash Tips ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="w-full p-2 border rounded"
+                  value={sales.cashTips}
+                  onChange={(e) => handleSalesChange('cashTips', parseFloat(e.target.value))}
+                />
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold text-deep-sage mb-3">Financial Summary</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Card Sales</p>
+                  <p className="text-lg font-medium text-deep-sage">${totalCardSales.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Dauber Sales</p>
+                  <p className="text-lg font-medium text-deep-sage">${totalDauberSales.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Total Tips</p>
+                  <p className="text-lg font-medium text-deep-sage">${(sales.digitalTips + sales.cashTips).toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Total Payouts</p>
+                  <p className="text-lg font-medium text-deep-sage">${totalActualPayout.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Total Revenue</p>
+                  <p className="text-lg font-medium text-olivine">${totalRevenue.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">Net Profit</p>
+                  <p className="text-lg font-medium text-bluebell">${profit.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
           <h2 className="text-2xl font-bold text-deep-sage mb-4">Event Sales Tracker</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
