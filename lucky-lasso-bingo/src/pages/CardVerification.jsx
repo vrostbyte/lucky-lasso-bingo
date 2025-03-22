@@ -337,7 +337,7 @@ const CardVerification = () => {
           <div className="mb-6">
             <div className="grid grid-cols-5 gap-2">
               {/* Column Headers */}
-              {bingoLetters.map((letter, idx) => (
+              {bingoLetters.map(letter => (
                 <div 
                   key={letter} 
                   className="h-10 flex items-center justify-center font-bold rounded text-white bg-deep-sage"
@@ -348,18 +348,16 @@ const CardVerification = () => {
               
               {/* Card Input Grid */}
               {Array(25).fill(0).map((_, index) => {
-                const row = Math.floor(index / 5);
-                const col = index % 5;
                 const isFreeSpace = index === 12; // Center space
                 
                 // Determine the valid range for this column
                 let min, max;
-                switch(col) {
-                  case 0: min = 1; max = 15; break;  // B column
-                  case 1: min = 16; max = 30; break; // I column
-                  case 2: min = 31; max = 45; break; // N column
-                  case 3: min = 46; max = 60; break; // G column
-                  case 4: min = 61; max = 75; break; // O column
+                switch(index % 5) {
+                  case 0: min = 1; max = 15; break;
+                  case 1: min = 16; max = 30; break;
+                  case 2: min = 31; max = 45; break;
+                  case 3: min = 46; max = 60; break;
+                  case 4: min = 61; max = 75; break;
                   default: min = 1; max = 75;
                 }
                 
@@ -429,14 +427,14 @@ const CardVerification = () => {
         }`}>
           {result.isWinner ? (
             <div className="flex items-center">
-              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
               <span className="font-bold">WINNER!</span>
             </div>
           ) : (
             <div className="flex items-center">
-              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
               <span className="font-bold">NOT A WINNER</span>
@@ -454,7 +452,7 @@ const CardVerification = () => {
           <h3 className="text-md font-bold text-deep-sage mb-2">Card Validation</h3>
           
           <div className="grid grid-cols-5 gap-2">
-            {['B', 'I', 'N', 'G', 'O'].map((letter, idx) => (
+            {['B', 'I', 'N', 'G', 'O'].map(letter => (
               <div 
                 key={letter} 
                 className="h-10 flex items-center justify-center font-bold rounded text-white bg-deep-sage"
@@ -498,12 +496,21 @@ const CardVerification = () => {
             Verify Another Card
           </button>
           
-          <button
-            onClick={() => navigate('/game/' + result.gameData.id)}
-            className="py-2 px-4 bg-bluebell text-white rounded-md"
-          >
-            Return to Game
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="py-2 px-4 bg-bluebell text-white rounded-md"
+            >
+              Back to Previous Screen
+            </button>
+            
+            <button
+              onClick={() => navigate(`/game/${result.gameData.id}`)}
+              className="py-2 px-4 bg-olivine text-white rounded-md"
+            >
+              Return to Game
+            </button>
+          </div>
         </div>
       </div>
     );

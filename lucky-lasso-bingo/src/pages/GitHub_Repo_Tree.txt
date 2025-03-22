@@ -1,0 +1,39 @@
+GitHub Repo Tree for Repo: https://github.com/vrostbyte/lucky-lasso-bingo
+
+lucky-lasso-bingo/
+├── public/
+│   └── vite.svg
+├── src/
+│   ├── assets/
+│   │   └── react.svg
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── AdvancedEventForm.jsx
+│   │   │   └── EventForm.jsx
+│   │   └── layout/
+│   │       ├── Header.jsx
+│   │       └── EventForm.jsx
+│   ├── pages/
+│   │   ├── CardVerification.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── EventDetails.jsx
+│   │   ├── GameHistory.jsx
+│   │   ├── GameSetup.jsx
+│   │   ├── GameView.jsx
+│   │   ├── Login.jsx
+│   │   ├── NotFound.jsx
+│   │   └── PatternCreator.jsx
+│   ├── App.css
+│   ├── App.jsx
+│   ├── firebase.js
+│   ├── index.css
+│   └── main.jsx
+├── .gitignore
+├── README.md
+├── eslint.config.js
+├── index.html
+├── package-lock.json
+├── package.json
+├── postcss.config.cjs
+├── tailwind.config.cjs
+└── vite.config.js

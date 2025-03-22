@@ -18,6 +18,15 @@ const GameView = () => {
   const [timer, setTimer] = useState(0);
   const timerRef = useRef(null);
 
+  // Payout calculation state
+  const [potAmount, setPotAmount] = useState('');
+  const [winnerCount, setWinnerCount] = useState(1);
+  const [winnerName, setWinnerName] = useState('');
+  const [calculatedPayout, setCalculatedPayout] = useState(0);
+  const [actualPayout, setActualPayout] = useState(0);
+  const [roundingLoss, setRoundingLoss] = useState(0);
+  const [saving, setSaving] = useState(false);
+  
   // Ball drawing state
   const [drawing, setDrawing] = useState(false);
   const [manualDrawMode, setManualDrawMode] = useState(false);
@@ -25,12 +34,6 @@ const GameView = () => {
   
   // End game modal state
   const [showEndGameModal, setShowEndGameModal] = useState(false);
-  const [potAmount, setPotAmount] = useState('');
-  const [winnerCount, setWinnerCount] = useState(1);
-  const [winnerName, setWinnerName] = useState('');
-  const [calculatedPayout, setCalculatedPayout] = useState(0);
-  const [actualPayout, setActualPayout] = useState(0);
-  const [saving, setSaving] = useState(false);
   
   // Load game data from Firestore
   useEffect(() => {
@@ -52,12 +55,12 @@ const GameView = () => {
           }
           
           // Subscribe to real-time updates for this game
-          const unsubscribe = onSnapshot(doc(db, 'games', gameId), (doc) => {
-            if (doc.exists()) {
+          const unsubscribe = onSnapshot(doc(db, 'games', gameId), (docSnap) => {
+            if (docSnap.exists()) {
               const updatedGame = {
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate() || new Date()
+                id: docSnap.id,
+                ...docSnap.data(),
+                createdAt: docSnap.data().createdAt?.toDate() || new Date()
               };
               
               setGame(updatedGame);
@@ -70,7 +73,6 @@ const GameView = () => {
             }
           });
           
-          // Cleanup function to unsubscribe
           return () => unsubscribe();
         } else {
           setError('Game not found');
@@ -86,22 +88,24 @@ const GameView = () => {
     fetchGame();
   }, [gameId]);
   
-  // Timer effect
+  // Persistent Timer Effect:
+  // Calculate elapsed time based on the stored startTime to ensure persistence
   useEffect(() => {
-    if (isGameRunning) {
+    if (game && game.startTime && !game.endTime) {
+      const startTime = game.startTime.toDate ? game.startTime.toDate() : new Date(game.startTime);
       timerRef.current = setInterval(() => {
-        setTimer(prev => prev + 1);
+        const now = new Date();
+        const diff = Math.floor((now - startTime) / 1000);
+        setTimer(diff);
       }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
     
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isGameRunning]);
+  }, [game]);
   
   // Format timer as MM:SS
   const formatTime = (seconds) => {
@@ -137,7 +141,6 @@ const GameView = () => {
         lastBallDrawn: new Date()
       });
       
-      // Set the current ball (the local state will be updated via onSnapshot)
       setCurrentBall(newBall);
     } catch (err) {
       console.error('Error drawing ball:', err);
@@ -147,21 +150,18 @@ const GameView = () => {
     }
   };
   
-  // Handle manual ball entry with improved validation
+  // Handle manual ball entry with validation
   const handleManualBallSubmit = async (e) => {
     e.preventDefault();
     
-    // Extract letter and number
     const letter = manualBall.charAt(0);
     const number = parseInt(manualBall.substring(1));
     
-    // Validate letter
     if (!['B', 'I', 'N', 'G', 'O'].includes(letter)) {
       alert('Invalid letter. Use B, I, N, G, or O.');
       return;
     }
     
-    // Validate number ranges for each letter
     const validRanges = {
       'B': [1, 15],
       'I': [16, 30],
@@ -176,20 +176,17 @@ const GameView = () => {
       return;
     }
     
-    // Check if ball has already been drawn
     if (drawnBalls.includes(manualBall)) {
       alert('This ball has already been drawn.');
       return;
     }
     
     try {
-      // Update the game in Firestore
       await updateDoc(doc(db, 'games', gameId), {
         drawnBalls: arrayUnion(manualBall),
         lastBallDrawn: new Date()
       });
       
-      // Reset the manual ball input
       setManualBall('');
     } catch (err) {
       console.error('Error adding manual ball:', err);
@@ -200,32 +197,21 @@ const GameView = () => {
   // Generate all possible bingo balls
   const getAllBingoBalls = () => {
     const balls = [];
-    
-    // B: 1-15
     for (let i = 1; i <= 15; i++) {
       balls.push(`B${i}`);
     }
-    
-    // I: 16-30
     for (let i = 16; i <= 30; i++) {
       balls.push(`I${i}`);
     }
-    
-    // N: 31-45
     for (let i = 31; i <= 45; i++) {
       balls.push(`N${i}`);
     }
-    
-    // G: 46-60
     for (let i = 46; i <= 60; i++) {
       balls.push(`G${i}`);
     }
-    
-    // O: 61-75
     for (let i = 61; i <= 75; i++) {
       balls.push(`O${i}`);
     }
-    
     return balls;
   };
   
@@ -254,7 +240,7 @@ const GameView = () => {
     }
   };
   
-  // End the game
+  // End the game (opens modal)
   const handleEndGame = () => {
     if (!window.confirm('Are you sure you want to end this game?')) {
       return;
@@ -262,7 +248,6 @@ const GameView = () => {
     
     setIsGameRunning(false);
     
-    // Use default values from the game if they exist
     if (game.allocatedAmount) {
       setPotAmount(game.allocatedAmount.toString());
       calculatePayouts(game.allocatedAmount, 1);
@@ -271,27 +256,30 @@ const GameView = () => {
     setShowEndGameModal(true);
   };
   
-  // Calculate payouts
+  // Calculate payouts and rounding loss
   const calculatePayouts = (potAmount, winnerCount) => {
     if (!potAmount || !winnerCount || potAmount <= 0 || winnerCount <= 0) {
       setCalculatedPayout(0);
       setActualPayout(0);
+      setRoundingLoss(0);
       return;
     }
     
     const pot = parseFloat(potAmount);
     const winners = parseInt(winnerCount);
     
-    // Calculate the raw payout per winner
     const calculatedAmount = pot / winners;
     setCalculatedPayout(calculatedAmount);
     
-    // Round up to the nearest dollar (Arizona law)
     const roundedAmount = Math.ceil(calculatedAmount);
     setActualPayout(roundedAmount);
+    
+    const lossPerWinner = roundedAmount - calculatedAmount;
+    const totalLoss = lossPerWinner * winners;
+    setRoundingLoss(totalLoss);
   };
   
-  // Finalize the game
+  // Finalize the game and record results
   const finalizeGame = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -301,12 +289,10 @@ const GameView = () => {
       const winners = parseInt(winnerCount);
       const winnersList = winnerName.split(',').map(name => name.trim());
       
-      // Calculate payouts
       const calculatedPayoutPerWinner = totalPot / winners;
       const actualPayoutPerWinner = Math.ceil(calculatedPayoutPerWinner);
-      
-      // Total payout might exceed pot due to rounding
       const totalActualPayout = actualPayoutPerWinner * winners;
+      const roundingLossCalc = totalActualPayout - totalPot;
       
       await updateDoc(doc(db, 'games', gameId), {
         status: 'completed',
@@ -318,6 +304,7 @@ const GameView = () => {
         calculatedPayoutPerWinner: calculatedPayoutPerWinner,
         actualPayoutPerWinner: actualPayoutPerWinner,
         totalActualPayout: totalActualPayout,
+        roundingLoss: roundingLossCalc
       });
       
       alert('Game has ended and payouts have been recorded.');
@@ -554,7 +541,7 @@ const GameView = () => {
             </div>
           </div>
           
-          {/* Right sidebar - Ball board with improved layout */}
+          {/* Right sidebar - Ball board */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-4 overflow-y-auto">
               <h2 className="text-lg font-bold mb-4 text-center text-deep-sage">Ball Board</h2>
@@ -571,14 +558,13 @@ const GameView = () => {
                 ))}
               </div>
               
-              {/* Number Grid - All columns side by side */}
+              {/* Number Grid */}
               <div className="grid grid-cols-5 gap-1">
-                {/* B Column (1-15) */}
+                {/* B Column */}
                 <div className="flex flex-col gap-1">
                   {Array.from({ length: 15 }, (_, i) => i + 1).map((num) => {
                     const ball = `B${num}`;
                     const isDrawn = drawnBalls.includes(ball);
-                    
                     return (
                       <div 
                         key={ball} 
@@ -591,13 +577,11 @@ const GameView = () => {
                     );
                   })}
                 </div>
-                
-                {/* I Column (16-30) */}
+                {/* I Column */}
                 <div className="flex flex-col gap-1">
                   {Array.from({ length: 15 }, (_, i) => i + 16).map((num) => {
                     const ball = `I${num}`;
                     const isDrawn = drawnBalls.includes(ball);
-                    
                     return (
                       <div 
                         key={ball} 
@@ -610,13 +594,11 @@ const GameView = () => {
                     );
                   })}
                 </div>
-                
-                {/* N Column (31-45) */}
+                {/* N Column */}
                 <div className="flex flex-col gap-1">
                   {Array.from({ length: 15 }, (_, i) => i + 31).map((num) => {
                     const ball = `N${num}`;
                     const isDrawn = drawnBalls.includes(ball);
-                    
                     return (
                       <div 
                         key={ball} 
@@ -629,13 +611,11 @@ const GameView = () => {
                     );
                   })}
                 </div>
-                
-                {/* G Column (46-60) */}
+                {/* G Column */}
                 <div className="flex flex-col gap-1">
                   {Array.from({ length: 15 }, (_, i) => i + 46).map((num) => {
                     const ball = `G${num}`;
                     const isDrawn = drawnBalls.includes(ball);
-                    
                     return (
                       <div 
                         key={ball} 
@@ -648,13 +628,11 @@ const GameView = () => {
                     );
                   })}
                 </div>
-                
-                {/* O Column (61-75) */}
+                {/* O Column */}
                 <div className="flex flex-col gap-1">
                   {Array.from({ length: 15 }, (_, i) => i + 61).map((num) => {
                     const ball = `O${num}`;
                     const isDrawn = drawnBalls.includes(ball);
-                    
                     return (
                       <div 
                         key={ball} 
@@ -741,6 +719,9 @@ const GameView = () => {
                     </p>
                     <p className="text-deep-sage">
                       Actual payout per winner (rounded up): <span className="font-bold">${actualPayout.toFixed(2)}</span>
+                    </p>
+                    <p className="text-deep-sage">
+                      Total rounding loss: <span className="font-bold">${roundingLoss.toFixed(2)}</span>
                     </p>
                   </div>
                 )}

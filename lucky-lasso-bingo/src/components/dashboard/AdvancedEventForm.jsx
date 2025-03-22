@@ -1,3 +1,5 @@
+// src/components/dashboard/AdvancedEventForm.jsx
+
 import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../firebase';
@@ -206,7 +208,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
           <input
             id="name"
             type="text"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border rounded-md text-black"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -220,7 +222,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
           <input
             id="location"
             type="text"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border rounded-md text-black"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             required
@@ -234,7 +236,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
           <input
             id="date"
             type="date"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border rounded-md text-black"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
@@ -250,7 +252,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
             type="number"
             min="1"
             max="30"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border rounded-md text-black"
             value={numGames}
             onChange={(e) => setNumGames(e.target.value)}
             required
@@ -266,7 +268,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
             type="number"
             min="0"
             step="0.01"
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-3 py-2 border rounded-md text-black"
             value={totalPrizePool}
             onChange={(e) => setTotalPrizePool(e.target.value)}
             required
@@ -278,7 +280,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 border border-gray-300 rounded-md mr-2"
+          className="px-4 py-2 border border-gray-300 rounded-md mr-2 text-gray-700 bg-gray-100"
         >
           Cancel
         </button>
@@ -330,7 +332,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
                     <select
                       value={game.patternId}
                       onChange={(e) => handlePatternChange(index, e.target.value)}
-                      className="w-full px-2 py-1 border rounded-md"
+                      className="w-full px-2 py-1 border rounded-md text-black"
                     >
                       <optgroup label="Standard Patterns">
                         {patterns.filter(p => !p.isCustom).map((pattern) => (
@@ -365,7 +367,7 @@ const AdvancedEventForm = ({ onClose, onEventAdded }) => {
         <button
           type="button"
           onClick={handlePrevStep}
-          className="px-4 py-2 border border-gray-300 rounded-md"
+          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-gray-100"
         >
           Back
         </button>

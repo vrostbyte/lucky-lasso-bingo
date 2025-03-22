@@ -3,13 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, getDocs, query, orderBy, where, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import EventForm from '../components/dashboard/EventForm';
-import AdvancedEventForm from '../components/dashboard/AdvancedEventForm';
+import Header from '../components/layout/Header';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [showAdvancedEventForm, setShowAdvancedEventForm] = useState(false);
   const [events, setEvents] = useState([]);
   const [activeGames, setActiveGames] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
@@ -149,25 +146,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-ivory p-6">
-      <header className="bg-deep-sage text-white p-4 rounded-lg shadow-md mb-6">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Lucky Lasso Bingo Dashboard</h1>
-          <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => navigate('/patterns')}
-              className="bg-lilac hover:bg-opacity-90 text-deep-sage py-2 px-4 rounded"
-            >
-              Pattern Creator
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="bg-dahlia text-white py-2 px-4 rounded-md hover:bg-opacity-90 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header title="Dashboard" />
       
       <main className="container mx-auto">
         {/* Active Games Section */}
@@ -229,20 +208,6 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-deep-sage">Bingo Events</h2>
-            <div className="flex space-x-2">
-              <button 
-                onClick={() => setShowEventForm(true)}
-                className="bg-bluebell hover:bg-opacity-90 text-white py-2 px-4 rounded"
-              >
-                Create Event
-              </button>
-              <button 
-                onClick={() => setShowAdvancedEventForm(true)}
-                className="bg-olivine hover:bg-opacity-90 text-white py-2 px-4 rounded"
-              >
-                Advanced Planning
-              </button>
-            </div>
           </div>
           
           {loading ? (
@@ -352,22 +317,6 @@ const Dashboard = () => {
           )}
         </div>
       </main>
-
-      {/* Event Form Modal */}
-      {showEventForm && (
-        <EventForm 
-          onClose={() => setShowEventForm(false)} 
-          onEventAdded={handleEventAdded} 
-        />
-      )}
-
-      {/* Advanced Event Form Modal */}
-      {showAdvancedEventForm && (
-        <AdvancedEventForm 
-          onClose={() => setShowAdvancedEventForm(false)} 
-          onEventAdded={handleEventAdded} 
-        />
-      )}
     </div>
   );
 };
