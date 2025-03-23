@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -12,20 +13,40 @@ import CardVerification from './pages/CardVerification';
 import PatternCreator from './pages/PatternCreator';
 import EventDetails from './pages/EventDetails';
 import GameHistory from './pages/GameHistory';
+import PublicView from './pages/PublicView';
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [publicGameData, setPublicGameData] = useState(null);
 
   useEffect(() => {
     console.log('Setting up auth state listener...');
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       console.log('Auth state changed:', user ? `User: ${user.email}` : 'No user');
       setUser(user);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Listen for the current game to update public view
+    // Note: You'll need to modify this to listen to the specific game for the public view
+    const gameRef = doc(db, 'games', 'YOUR_CURRENT_GAME_ID');
+    const unsubscribeGame = onSnapshot(gameRef, (doc) => {
+      if (doc.exists()) {
+        const gameData = {
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date()
+        };
+        setPublicGameData(gameData);
+      }
+    });
+
+    // Cleanup subscriptions
+    return () => {
+      unsubscribeAuth();
+      unsubscribeGame();
+    };
   }, []);
 
   if (loading) {
@@ -46,6 +67,16 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/game/new" element={<GameSetup />} />
         <Route path="/game/:gameId" element={<GameView />} />
+        {/* New Public View Route */}
+        <Route 
+          path="/public/:gameId" 
+          element={
+            <PublicView 
+              gameData={publicGameData} 
+              onUpdateGame={setPublicGameData} 
+            />
+          } 
+        />
         <Route path="/event/:eventId" element={<EventDetails />} />
         <Route path="/game-history/:gameId" element={<GameHistory />} />
         <Route path="/verify" element={<CardVerification />} />

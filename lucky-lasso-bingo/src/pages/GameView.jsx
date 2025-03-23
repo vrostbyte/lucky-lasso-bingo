@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import Header from '../components/layout/Header';
+import PublicView from './PublicView';
 
 const GameView = () => {
   const { gameId } = useParams();
@@ -34,6 +35,9 @@ const GameView = () => {
   
   // End game modal state
   const [showEndGameModal, setShowEndGameModal] = useState(false);
+  
+  // Public view toggle state
+  const [showPublicView, setShowPublicView] = useState(false);
   
   // Load game data from Firestore
   useEffect(() => {
@@ -362,6 +366,32 @@ const GameView = () => {
     );
   }
   
+  // Toggle between game view and public view
+  const togglePublicView = () => {
+    setShowPublicView(!showPublicView);
+  };
+  
+  // If showing public view, render the PublicView component
+  if (showPublicView) {
+    return (
+      <div className="min-h-screen bg-ivory relative">
+        {/* X button to return to game view */}
+        <button
+          onClick={togglePublicView}
+          className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-md"
+          aria-label="Close public view"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-deep-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        {/* Render PublicView with current game data */}
+        <PublicView gameData={game} />
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-ivory">
       <Header title={`Game #${game.gameNumber}`} />
@@ -486,12 +516,21 @@ const GameView = () => {
             {/* Game controls */}
             <div className="bg-white rounded-lg shadow-md p-4 mb-4">
               <div className="flex justify-between">
-                <button 
-                  onClick={() => navigate('/verify')}
-                  className="py-2 px-4 rounded font-medium text-white bg-bluebell"
-                >
-                  Card Verification
-                </button>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => navigate('/verify')}
+                    className="py-2 px-4 rounded font-medium text-white bg-bluebell"
+                  >
+                    Card Verification
+                  </button>
+                  
+                  <button 
+                    onClick={togglePublicView}
+                    className="py-2 px-4 rounded font-medium text-white bg-lilac"
+                  >
+                    Public View
+                  </button>
+                </div>
                 
                 <div className="flex space-x-2">
                   {!isGameRunning ? (
