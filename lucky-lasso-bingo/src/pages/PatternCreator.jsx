@@ -229,24 +229,6 @@ const PatternCreator = () => {
       <Header title="Pattern Creator" />
       
       <main className="container mx-auto p-4">
-        {/* Pattern Difficulty Selector */}
-        <div className="mb-6 bg-white p-4 rounded-lg shadow-md">
-          <label className="block text-deep-sage font-medium mb-2">Pattern Difficulty</label>
-          <div className="flex items-center space-x-4">
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={patternDifficulty}
-              onChange={(e) => setPatternDifficulty(parseInt(e.target.value))}
-              className="w-full h-2 bg-olivine rounded-lg appearance-none cursor-pointer"
-            />
-            <span className="text-deep-sage font-medium">{patternDifficulty}</span>
-          </div>
-          <p className="text-sm text-gray-500 mt-1">
-            {patternDifficulty <= 3 ? "Easy" : patternDifficulty <= 6 ? "Medium" : "Hard"}
-          </p>
-        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Pattern Editor */}
           <div className="lg:col-span-2">
@@ -257,7 +239,7 @@ const PatternCreator = () => {
                 <div className="w-full max-w-md mx-auto">
                   <p className="text-center text-deep-sage mb-2">Click cells to toggle:</p>
                   
-                  <div className="grid grid-cols-5 gap-2 mb-4">
+                  <div className="grid grid-cols-5 gap-2 mb-4 mx-auto">
                     {['B', 'I', 'N', 'G', 'O'].map((letter, idx) => (
                       <div 
                         key={letter} 
@@ -275,7 +257,7 @@ const PatternCreator = () => {
                           <div 
                             key={`${rowIndex}-${colIndex}`}
                             onClick={() => !isFreeSpace && toggleCell(rowIndex, colIndex)}
-                            className={`h-12 w-12 rounded cursor-pointer flex items-center justify-center transition-colors ${
+                            className={`h-12 w-12 rounded cursor-pointer flex items-center justify-center text-center transition-colors ${
                               isFreeSpace
                                 ? 'bg-lilac bg-opacity-30 text-deep-sage font-bold'
                                 : cell
@@ -323,7 +305,7 @@ const PatternCreator = () => {
                   />
                 </div>
                 
-                <div className="mb-6">
+                <div className="mb-4">
                   <label htmlFor="patternDescription" className="block text-deep-sage mb-2">
                     Description (Optional)
                   </label>
@@ -335,6 +317,24 @@ const PatternCreator = () => {
                     onChange={(e) => setPatternDescription(e.target.value)}
                     placeholder="Describe your pattern..."
                   ></textarea>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-deep-sage font-medium mb-2">Pattern Difficulty</label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={patternDifficulty}
+                      onChange={(e) => setPatternDifficulty(parseInt(e.target.value))}
+                      className="w-full h-2 bg-olivine rounded-lg appearance-none cursor-pointer"
+                    />
+                    <span className="text-deep-sage font-medium">{patternDifficulty}</span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {patternDifficulty <= 3 ? "Easy" : patternDifficulty <= 6 ? "Medium" : "Hard"}
+                  </p>
                 </div>
                 
                 <div className="flex justify-end space-x-3">

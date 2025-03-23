@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { collection, getDocs, query, orderBy, where, doc, writeBatch, deleteDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { collection, getDocs, query, orderBy, where, doc, writeBatch } from 'firebase/firestore';
+import { db } from '../firebase';
 import Header from '../components/layout/Header';
 
 const Dashboard = () => {
@@ -146,15 +145,7 @@ const Dashboard = () => {
     fetchRecentGames();
   }, []);
 
-  const handleLogout = () => {
-    signOut(auth);
-  };
 
-  const handleEventAdded = () => {
-    // Refresh events list when a new event is added
-    fetchEvents();
-    fetchActiveGames();
-  };
   
   // Handle sorting for active games
   const handleActiveSort = (field) => {
