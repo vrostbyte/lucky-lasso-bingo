@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import Header from '../components/layout/Header';
+import TransactionForm from '../components/TransactionForm';
+import TransactionTable from '../components/TransactionTable';
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -11,6 +13,8 @@ const EventDetails = () => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [transactions, setTransactions] = useState([]);
   const [sales, setSales] = useState({
     daubersSold: 0,
     cardsSold: 0,
@@ -40,6 +44,9 @@ const EventDetails = () => {
               ...prevSales,
               ...eventData.sales,
             }));
+          }
+          if (eventData.transactions) {
+            setTransactions(eventData.transactions);
           }
         } else {
           setError("Event not found");
@@ -94,9 +101,16 @@ const EventDetails = () => {
     }
   });
 
+  // Calculate transaction revenue
+  const transactionRevenue = transactions.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+  
+  // Legacy sales calculations (kept for backward compatibility)
   const totalCardSales = sales.cardsSold * sales.cardPrice;
   const totalDauberSales = sales.daubersSold * sales.dauberPrice;
-  const totalRevenue = totalCardSales + totalDauberSales + sales.digitalTips + sales.cashTips;
+  const totalTips = sales.digitalTips + sales.cashTips;
+  
+  // Total revenue now includes transaction revenue
+  const totalRevenue = transactionRevenue + totalTips;
   const profit = totalRevenue - totalActualPayout;
 
   const completedGames = games.filter(game => game.status === 'completed');
@@ -125,7 +139,7 @@ const EventDetails = () => {
     const columnCounter = { B: 0, I: 0, N: 0, G: 0, O: 0 };
     allBalls.forEach(ball => {
       const letter = ball.charAt(0);
-      if (columnCounter.hasOwnProperty(letter)) {
+      if (Object.prototype.hasOwnProperty.call(columnCounter, letter)) {
         columnCounter[letter]++;
       }
     });
@@ -174,160 +188,40 @@ const EventDetails = () => {
     );
   }
 
+  const handleTransactionAdded = () => {
+    // Refresh event data to get updated transactions
+    const fetchEvent = async () => {
+      try {
+        const eventDoc = await getDoc(doc(db, 'events', eventId));
+        if (eventDoc.exists()) {
+          const eventData = eventDoc.data();
+          if (eventData.transactions) {
+            setTransactions(eventData.transactions);
+          }
+        }
+      } catch (err) {
+        console.error('Error refreshing event data:', err);
+      }
+    };
+    fetchEvent();
+  };
+
   return (
     <div className="min-h-screen bg-ivory">
       <Header title={`Event: ${event.name}`} />
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-deep-sage mb-4">Sales Tracker</h2>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Card Price ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full p-2 border rounded"
-                  value={sales.cardPrice}
-                  onChange={(e) => handleSalesChange('cardPrice', parseFloat(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Dauber Price ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full p-2 border rounded"
-                  value={sales.dauberPrice}
-                  onChange={(e) => handleSalesChange('dauberPrice', parseFloat(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Cards Sold</label>
-                <input
-                  type="number"
-                  className="w-full p-2 border rounded"
-                  value={sales.cardsSold}
-                  onChange={(e) => handleSalesChange('cardsSold', parseInt(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Daubers Sold</label>
-                <input
-                  type="number"
-                  className="w-full p-2 border rounded"
-                  value={sales.daubersSold}
-                  onChange={(e) => handleSalesChange('daubersSold', parseInt(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Digital Tips ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full p-2 border rounded"
-                  value={sales.digitalTips}
-                  onChange={(e) => handleSalesChange('digitalTips', parseFloat(e.target.value))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-deep-sage mb-1">Cash Tips ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full p-2 border rounded"
-                  value={sales.cashTips}
-                  onChange={(e) => handleSalesChange('cashTips', parseFloat(e.target.value))}
-                />
-              </div>
-            </div>
-            
-            <div className="border-t pt-4">
-              <h3 className="text-lg font-semibold text-deep-sage mb-3">Financial Summary</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Card Sales</p>
-                  <p className="text-lg font-medium text-deep-sage">${totalCardSales.toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Dauber Sales</p>
-                  <p className="text-lg font-medium text-deep-sage">${totalDauberSales.toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Total Tips</p>
-                  <p className="text-lg font-medium text-deep-sage">${(sales.digitalTips + sales.cashTips).toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Total Payouts</p>
-                  <p className="text-lg font-medium text-deep-sage">${totalActualPayout.toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-lg font-medium text-olivine">${totalRevenue.toFixed(2)}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-sm text-gray-600">Net Profit</p>
-                  <p className="text-lg font-medium text-bluebell">${profit.toFixed(2)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-deep-sage mb-4">Event Sales Tracker</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-deep-sage mb-1">Daubers Sold</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={sales.daubersSold}
-                onChange={(e) => handleSalesChange('daubersSold', parseInt(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-deep-sage mb-1">Cards Sold</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={sales.cardsSold}
-                onChange={(e) => handleSalesChange('cardsSold', parseInt(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-deep-sage mb-1">Cash Tips</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={sales.cashTips}
-                onChange={(e) => handleSalesChange('cashTips', parseFloat(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-deep-sage mb-1">Digital Tips</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={sales.digitalTips}
-                onChange={(e) => handleSalesChange('digitalTips', parseFloat(e.target.value))}
-              />
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-lilac bg-opacity-20 p-3 rounded-lg">
-              <p className="text-sm text-deep-sage">Total Revenue</p>
-              <p className="text-deep-sage font-medium">${totalRevenue.toFixed(2)}</p>
-            </div>
-            <div className="bg-lilac bg-opacity-20 p-3 rounded-lg">
-              <p className="text-sm text-deep-sage">Profit (Revenue - Payouts)</p>
-              <p className="text-deep-sage font-medium">${profit.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-
+        
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-deep-sage mb-4">Financial Summary</h2>
-          <p><span className="font-medium">Total Rounding Loss:</span> ${totalRoundingLoss.toFixed(2)}</p>
-          <p><span className="font-medium">Total Actual Payout:</span> ${totalActualPayout.toFixed(2)}</p>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-deep-sage">Transactions</h2>
+            <button
+              onClick={() => setShowTransactionForm(true)}
+              className="bg-bluebell hover:bg-opacity-90 text-white py-2 px-4 rounded flex items-center"
+            >
+              <span className="mr-1">+</span> Add Transaction
+            </button>
+          </div>
+          <TransactionTable transactions={transactions} />
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -375,7 +269,7 @@ const EventDetails = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-bold text-deep-sage mb-4">Games for this Event</h2>
           {games.length === 0 ? (
             <p className="text-center text-gray-500">No games found for this event.</p>
@@ -412,12 +306,50 @@ const EventDetails = () => {
           )}
         </div>
 
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h3 className="text-2xl font-bold text-deep-sage mb-3">Financial Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Transaction Revenue</p>
+              <p className="text-lg font-medium text-deep-sage">${transactionRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Total Tips</p>
+              <p className="text-lg font-medium text-deep-sage">${totalTips.toFixed(2)}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Total Payouts</p>
+              <p className="text-lg font-medium text-deep-sage">${totalActualPayout.toFixed(2)}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Total Revenue</p>
+              <p className="text-lg font-medium text-olivine">${totalRevenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Profit</p>
+              <p className="text-lg font-medium text-deep-sage">${profit.toFixed(2)}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded">
+              <p className="text-sm text-gray-600">Total Rounding Loss</p>
+              <p className="text-lg font-medium text-deep-sage">${totalRoundingLoss.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+
         <button
           onClick={() => navigate('/dashboard')}
           className="mt-6 bg-bluebell hover:bg-opacity-90 text-white py-2 px-4 rounded"
         >
           Back to Dashboard
         </button>
+        
+        {showTransactionForm && (
+          <TransactionForm 
+            eventId={eventId} 
+            onClose={() => setShowTransactionForm(false)} 
+            onTransactionAdded={handleTransactionAdded} 
+          />
+        )}
       </div>
     </div>
   );

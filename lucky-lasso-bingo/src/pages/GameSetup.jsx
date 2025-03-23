@@ -282,186 +282,179 @@ const GameSetup = () => {
     <div className="min-h-screen bg-ivory">
       <Header title="Game Setup" />
       <div className="max-w-7xl mx-auto p-6">
-        {renderGameSelection()}
-        {isNewGame ? (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-deep-sage mb-4">Create New Game</h2>
-            <form onSubmit={handleCreateGame}>
-              <div className="grid gap-4">
-                <div>
-                  <label className="block text-deep-sage font-medium mb-2">Game Number</label>
-                  <input
-                    type="number"
-                    value={gameNumber}
-                    onChange={(e) => setGameNumber(e.target.value)}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-deep-sage font-medium mb-2">Pattern</label>
-                  <select
-                    value={patternType}
-                    onChange={handlePatternChange}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
-                    required
-                  >
-                    {patterns.map(pattern => (
-                      <option key={pattern.id} value={pattern.id}>
-                        {pattern.name} {pattern.difficulty ? `(Difficulty: ${pattern.difficulty})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-deep-sage font-medium mb-2">Prize</label>
-                  <input
-                    type="text"
-                    value={prize}
-                    onChange={(e) => setPrize(e.target.value)}
-                    className="w-full p-2 border rounded focus:ring-2 focus:ring-bluebell"
-                    placeholder="e.g. $50"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="w-full bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90 disabled:opacity-50"
-                >
-                  {creating ? 'Creating...' : 'Create Game'}
-                </button>
-              </div>
-            </form>
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-2xl font-bold text-deep-sage mb-4">Event: {eventDetails.name}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-lilac bg-opacity-20 p-3 rounded-lg">
+              <p className="text-sm text-deep-sage">Event Name</p>
+              <p className="text-deep-sage font-medium">{eventDetails.name}</p>
+            </div>
+            <div className="bg-lilac bg-opacity-20 p-3 rounded-lg">
+              <p className="text-sm text-deep-sage">Location</p>
+              <p className="text-deep-sage font-medium">{eventDetails.location}</p>
+            </div>
+            <div className="bg-lilac bg-opacity-20 p-3 rounded-lg">
+              <p className="text-sm text-deep-sage">Date</p>
+              <p className="text-deep-sage font-medium">{eventDetails.date.toLocaleDateString()}</p>
+            </div>
           </div>
-        ) : (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-semibold text-deep-sage mb-4">Start Existing Game</h2>
-            {selectedGame ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-deep-sage">Selected Game Details</h3>
-                  <p className="text-gray-600">Game {selectedGame.gameNumber}</p>
-                  <p className="text-gray-600">Pattern: {selectedGame.patternName}</p>
-                  <p className="text-gray-600">Prize: {selectedGame.prize}</p>
+          
+          {/* Game Mode Toggle */}
+          <div className="flex space-x-4 mb-6">
+            <button
+              onClick={handleNewGameClick}
+              className={`px-6 py-3 rounded-lg font-medium transition-colors ${isNewGame ? 'bg-bluebell text-white' : 'bg-gray-200 text-deep-sage hover:bg-gray-300'}`}
+            >
+              Create New Game
+            </button>
+            {existingGames.length > 0 && (
+              <button
+                onClick={() => setIsNewGame(false)}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${!isNewGame ? 'bg-bluebell text-white' : 'bg-gray-200 text-deep-sage hover:bg-gray-300'}`}
+              >
+                Use Existing Game
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Game Selection Section - Only shown when in "Use Existing Game" mode */}
+        {!isNewGame && existingGames.length > 0 && (
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 className="text-xl font-semibold text-deep-sage mb-4">Select Existing Game</h2>
+            <div className="grid gap-4">
+              {existingGames.map((game) => (
+                <div
+                  key={game.id}
+                  onClick={() => handleGameSelection(game)}
+                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${selectedGame?.id === game.id ? 'border-bluebell bg-bluebell bg-opacity-10' : 'border-gray-200 hover:border-bluebell'}`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium text-deep-sage">Game {game.gameNumber}</h3>
+                      <p className="text-sm text-gray-600">{game.patternName}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-olivine">{game.prize}</p>
+                      <p className="text-xs text-gray-500">Ready to start</p>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+            
+            {selectedGame && (
+              <div className="mt-6 p-4 border border-bluebell rounded-lg bg-bluebell bg-opacity-5">
+                <h3 className="font-medium text-deep-sage mb-2">Selected Game Details</h3>
+                <p className="text-gray-600">Game {selectedGame.gameNumber}</p>
+                <p className="text-gray-600">Pattern: {selectedGame.patternName}</p>
+                <p className="text-gray-600">Prize: {selectedGame.prize}</p>
                 <button
                   onClick={() => navigate(`/game/${selectedGame.id}`)}
-                  className="w-full bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90"
+                  className="w-full mt-4 bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90"
                 >
                   Start Game
                 </button>
               </div>
-            ) : (
-              <p className="text-gray-600">Please select a game from the list above</p>
             )}
           </div>
         )}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-deep-sage mb-4">Start New Game</h2>
-          
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-deep-sage mb-2">Event Details</h3>
-            <p><span className="font-medium">Event:</span> {eventDetails.name}</p>
-            <p><span className="font-medium">Location:</span> {eventDetails.location}</p>
-            <p><span className="font-medium">Date:</span> {eventDetails.date.toLocaleDateString()}</p>
-          </div>
-          
-          <form onSubmit={handleCreateGame}>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-deep-sage mb-2" htmlFor="gameNumber">
-                  Game Number
-                </label>
-                <input
-                  id="gameNumber"
-                  type="number"
-                  min="1"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={gameNumber}
-                  onChange={(e) => setGameNumber(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-deep-sage mb-2" htmlFor="patternType">
-                  Bingo Pattern
-                </label>
-                <select
-                  id="patternType"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={patternId || patternType}
-                  onChange={handlePatternChange}
-                  required
-                >
-                  <optgroup label="Standard Patterns">
-                    {patterns.filter(p => !p.isCustom).map((pattern) => (
-                      <option key={pattern.id} value={pattern.id}>
-                        {pattern.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  
-                  {patterns.some(p => p.isCustom) && (
-                    <optgroup label="Custom Patterns">
-                      {patterns.filter(p => p.isCustom).map((pattern) => (
+        
+        {/* Game Creation Form - Only shown when in "Create New Game" mode */}
+        {isNewGame && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold text-deep-sage mb-4">Create New Game</h2>
+            <form onSubmit={handleCreateGame}>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-deep-sage mb-2" htmlFor="gameNumber">
+                    Game Number
+                  </label>
+                  <input
+                    id="gameNumber"
+                    type="number"
+                    min="1"
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-bluebell"
+                    value={gameNumber}
+                    onChange={(e) => setGameNumber(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-deep-sage mb-2" htmlFor="patternType">
+                    Bingo Pattern
+                  </label>
+                  <select
+                    id="patternType"
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-bluebell"
+                    value={patternId || patternType}
+                    onChange={handlePatternChange}
+                    required
+                  >
+                    <optgroup label="Standard Patterns">
+                      {patterns.filter(p => !p.isCustom).map((pattern) => (
                         <option key={pattern.id} value={pattern.id}>
                           {pattern.name}
                         </option>
                       ))}
                     </optgroup>
+                    
+                    {patterns.some(p => p.isCustom) && (
+                      <optgroup label="Custom Patterns">
+                        {patterns.filter(p => p.isCustom).map((pattern) => (
+                          <option key={pattern.id} value={pattern.id}>
+                            {pattern.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+                  
+                  {/* Show pattern description if available */}
+                  {patterns.find(p => (p.id === patternType || p.id === patternId))?.description && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {patterns.find(p => (p.id === patternType || p.id === patternId)).description}
+                    </p>
                   )}
-                </select>
+                </div>
                 
-                {/* Show pattern description if available */}
-                {patterns.find(p => (p.id === patternType || p.id === patternId))?.description && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    {patterns.find(p => (p.id === patternType || p.id === patternId)).description}
-                  </p>
-                )}
+                <div>
+                  <label className="block text-deep-sage mb-2" htmlFor="prize">
+                    Prize
+                  </label>
+                  <input
+                    id="prize"
+                    type="text"
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-bluebell"
+                    value={prize}
+                    onChange={(e) => setPrize(e.target.value)}
+                    placeholder="e.g. $100 Cash Prize"
+                    required
+                  />
+                </div>
               </div>
               
-              <div>
-                <label className="block text-deep-sage mb-2" htmlFor="prize">
-                  Prize
-                </label>
-                <input
-                  id="prize"
-                  type="text"
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={prize}
-                  onChange={(e) => setPrize(e.target.value)}
-                  placeholder="e.g. $100 Cash Prize"
-                  required
-                />
+              <div className="flex justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-gray-300 text-gray-800 py-2 px-4 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  type="submit"
+                  className="bg-bluebell text-white py-2 px-4 rounded hover:bg-opacity-90"
+                  disabled={creating}
+                >
+                  {creating ? 'Creating Game...' : 'Create Game'}
+                </button>
               </div>
-            </div>
-            
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="bg-gray-300 text-gray-800 py-2 px-4 rounded"
-              >
-                Cancel
-              </button>
-              
-              <button
-                type="submit"
-                className="bg-dahlia text-white py-2 px-4 rounded"
-                disabled={creating}
-              >
-                {creating ? 'Starting Game...' : 'Start Game'}
-              </button>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
