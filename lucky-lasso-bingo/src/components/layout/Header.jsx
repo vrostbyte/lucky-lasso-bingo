@@ -1,6 +1,6 @@
 // src/components/layout/Header.jsx
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -12,9 +12,25 @@ const Header = ({ title, showLogout = true }) => {
   const location = useLocation();
   const [showEventForm, setShowEventForm] = useState(false);
   const [showAdvancedEventForm, setShowAdvancedEventForm] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
   
   // Check if we're on the dashboard page
   const isDashboard = location.pathname === '/' || location.pathname === '/dashboard';
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -43,51 +59,85 @@ const Header = ({ title, showLogout = true }) => {
         <div className="flex items-center">
           {title && <span className="mr-6 font-medium">{title}</span>}
           
-          <div className="flex items-center space-x-3">
-            {/* Create Event button */}
+          {/* Hamburger menu for mobile/tablet */}
+          <div className="relative" ref={menuRef}>
             <button 
-              onClick={() => setShowEventForm(true)}
-              className="bg-bluebell hover:bg-opacity-90 text-white py-2 px-4 rounded"
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 text-white focus:outline-none"
+              aria-label="Menu"
             >
-              Create Event
+              <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-white mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-white"></div>
             </button>
             
-            {/* Advanced Planning button */}
-            <button 
-              onClick={() => setShowAdvancedEventForm(true)}
-              className="bg-olivine hover:bg-opacity-90 text-white py-2 px-4 rounded"
-            >
-              Advanced Planning
-            </button>
-            
-            {/* Pattern Creator button */}
-            <button 
-              onClick={() => navigate('/patterns')}
-              className="bg-lilac hover:bg-opacity-90 text-deep-sage py-2 px-4 rounded"
-            >
-              Pattern Creator
-            </button>
-            
-            {/* Dashboard button - only show if not on dashboard */}
-            {!isDashboard && (
-              <button
-                onClick={handleDashboardClick}
-                className="bg-olivine hover:bg-opacity-90 text-white py-2 px-4 rounded"
-              >
-                Dashboard
-              </button>
-            )}
-            
-            {/* Logout button - with extra margin to avoid accidental clicks */}
-            {showLogout && (
-              <button
-                onClick={handleLogout}
-                className="bg-dahlia hover:bg-opacity-90 text-white py-2 px-4 rounded ml-4"
-              >
-                Logout
-              </button>
+            {/* Dropdown menu */}
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                {/* Dashboard link - always show but highlight if not on dashboard */}
+                <button
+                  onClick={() => {
+                    handleDashboardClick();
+                    setShowMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-deep-sage hover:bg-gray-100"
+                >
+                  Dashboard
+                </button>
+                
+                {/* Create Event link */}
+                <button
+                  onClick={() => {
+                    setShowEventForm(true);
+                    setShowMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-deep-sage hover:bg-gray-100"
+                >
+                  Create Event
+                </button>
+                
+                {/* Advanced Planning link */}
+                <button
+                  onClick={() => {
+                    setShowAdvancedEventForm(true);
+                    setShowMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-deep-sage hover:bg-gray-100"
+                >
+                  Advanced Planning
+                </button>
+                
+                {/* Pattern Creator link */}
+                <button
+                  onClick={() => {
+                    navigate('/patterns');
+                    setShowMenu(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-deep-sage hover:bg-gray-100"
+                >
+                  Pattern Creator
+                </button>
+                
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-1"></div>
+                
+                {/* Logout link */}
+                {showLogout && (
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setShowMenu(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-dahlia hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                )}
+              </div>
             )}
           </div>
+          
+          {/* Desktop buttons removed - all functionality available through hamburger menu */}
         </div>
       </div>
       
