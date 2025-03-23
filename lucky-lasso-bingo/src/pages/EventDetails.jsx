@@ -15,6 +15,11 @@ const EventDetails = () => {
   const [error, setError] = useState(null);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [transactions, setTransactions] = useState([]);
+  
+  // Sorting state for games
+  const [sortField, setSortField] = useState('gameNumber');
+  const [sortDirection, setSortDirection] = useState('asc');
+  
   const [sales, setSales] = useState({
     daubersSold: 0,
     cardsSold: 0,
@@ -188,6 +193,47 @@ const EventDetails = () => {
     );
   }
 
+  // Handle sorting for games
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+  
+  // Get sorted games
+  const getSortedGames = () => {
+    return [...games].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      // Handle special cases
+      if (sortField === 'gameNumber') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
+      } else if (sortField === 'potAmount' || sortField === 'roundingLoss') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
+      }
+      
+      if (aValue < bValue) {
+        return sortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+  
+  // Helper function to get sort icon
+  const getSortIcon = (field) => {
+    if (sortField !== field) return '⇅';
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
+  
   const handleTransactionAdded = () => {
     // Refresh event data to get updated transactions
     const fetchEvent = async () => {
@@ -277,15 +323,43 @@ const EventDetails = () => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-deep-sage text-white">
-                  <th className="px-4 py-2 text-left">Game #</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Pot Amount</th>
-                  <th className="px-4 py-2 text-left">Rounding Loss</th>
+                  <th 
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort('gameNumber')}
+                  >
+                    <div className="flex items-center">
+                      Game # {getSortIcon('gameNumber')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort('status')}
+                  >
+                    <div className="flex items-center">
+                      Status {getSortIcon('status')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort('potAmount')}
+                  >
+                    <div className="flex items-center">
+                      Pot Amount {getSortIcon('potAmount')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort('roundingLoss')}
+                  >
+                    <div className="flex items-center">
+                      Rounding Loss {getSortIcon('roundingLoss')}
+                    </div>
+                  </th>
                   <th className="px-4 py-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {games.map(game => (
+                {getSortedGames().map(game => (
                   <tr key={game.id} className="border-b border-gray-200">
                     <td className="px-4 py-2">Game #{game.gameNumber}</td>
                     <td className="px-4 py-2">{game.status}</td>

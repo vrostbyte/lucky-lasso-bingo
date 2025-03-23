@@ -11,6 +11,14 @@ const Dashboard = () => {
   const [activeGames, setActiveGames] = useState([]);
   const [recentGames, setRecentGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Sorting state for active games
+  const [activeSortField, setActiveSortField] = useState('gameNumber');
+  const [activeSortDirection, setActiveSortDirection] = useState('asc');
+  
+  // Sorting state for recent games
+  const [recentSortField, setRecentSortField] = useState('gameNumber');
+  const [recentSortDirection, setRecentSortDirection] = useState('asc');
 
   // Function to fetch events from Firestore
   const fetchEvents = async () => {
@@ -59,7 +67,9 @@ const Dashboard = () => {
         createdAt: doc.data().createdAt?.toDate() || new Date()
       }));
       
-      setActiveGames(gamesList);
+      // Sort active games by gameNumber by default
+      const sortedGames = [...gamesList].sort((a, b) => a.gameNumber - b.gameNumber);
+      setActiveGames(sortedGames);
     } catch (error) {
       console.error('Error fetching active games:', error);
     }
@@ -83,7 +93,9 @@ const Dashboard = () => {
         endTime: doc.data().endTime?.toDate() || new Date()
       }));
       
-      setRecentGames(gamesList);
+      // Sort recent games by gameNumber by default
+      const sortedGames = [...gamesList].sort((a, b) => a.gameNumber - b.gameNumber);
+      setRecentGames(sortedGames);
     } catch (error) {
       console.error('Error fetching recent games:', error);
     }
@@ -143,6 +155,84 @@ const Dashboard = () => {
     fetchEvents();
     fetchActiveGames();
   };
+  
+  // Handle sorting for active games
+  const handleActiveSort = (field) => {
+    if (activeSortField === field) {
+      setActiveSortDirection(activeSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setActiveSortField(field);
+      setActiveSortDirection('asc');
+    }
+  };
+  
+  // Handle sorting for recent games
+  const handleRecentSort = (field) => {
+    if (recentSortField === field) {
+      setRecentSortDirection(recentSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setRecentSortField(field);
+      setRecentSortDirection('asc');
+    }
+  };
+  
+  // Get sorted active games
+  const getSortedActiveGames = () => {
+    return [...activeGames].sort((a, b) => {
+      let aValue = a[activeSortField];
+      let bValue = b[activeSortField];
+      
+      // Handle special cases
+      if (activeSortField === 'gameNumber') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
+      }
+      
+      if (aValue < bValue) {
+        return activeSortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return activeSortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+  
+  // Get sorted recent games
+  const getSortedRecentGames = () => {
+    return [...recentGames].sort((a, b) => {
+      let aValue = a[recentSortField];
+      let bValue = b[recentSortField];
+      
+      // Handle special cases
+      if (recentSortField === 'gameNumber') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
+      } else if (recentSortField === 'potAmount') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
+      } else if (recentSortField === 'endTime') {
+        aValue = aValue || new Date(0);
+        bValue = bValue || new Date(0);
+      }
+      
+      if (aValue < bValue) {
+        return recentSortDirection === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return recentSortDirection === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+  
+  // Helper function to get sort icon
+  const getSortIcon = (field, currentField, direction) => {
+    if (currentField !== field) return '⇅';
+    return direction === 'asc' ? '↑' : '↓';
+  };
+  
+  // The first getSortedRecentGames function is used, this comment replaces the duplicate declaration
 
   return (
     <div className="min-h-screen bg-ivory p-6">
@@ -166,15 +256,43 @@ const Dashboard = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-deep-sage text-white">
-                    <th className="px-4 py-2 text-left">Game</th>
-                    <th className="px-4 py-2 text-left">Event</th>
-                    <th className="px-4 py-2 text-left">Pattern</th>
-                    <th className="px-4 py-2 text-left">Status</th>
+                    <th 
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleActiveSort('gameNumber')}
+                    >
+                      <div className="flex items-center">
+                        Game {getSortIcon('gameNumber', activeSortField, activeSortDirection)}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleActiveSort('eventName')}
+                    >
+                      <div className="flex items-center">
+                        Event {getSortIcon('eventName', activeSortField, activeSortDirection)}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleActiveSort('patternName')}
+                    >
+                      <div className="flex items-center">
+                        Pattern {getSortIcon('patternName', activeSortField, activeSortDirection)}
+                      </div>
+                    </th>
+                    <th 
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleActiveSort('status')}
+                    >
+                      <div className="flex items-center">
+                        Status {getSortIcon('status', activeSortField, activeSortDirection)}
+                      </div>
+                    </th>
                     <th className="px-4 py-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeGames.map((game) => (
+                  {getSortedActiveGames().map((game) => (
                     <tr key={game.id} className="border-b border-gray-200">
                       <td className="px-4 py-2">Game #{game.gameNumber}</td>
                       <td className="px-4 py-2">{game.eventName}</td>
