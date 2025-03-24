@@ -18,6 +18,7 @@ import PublicView from './pages/PublicView';
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [publicGameData, setPublicGameData] = useState(null);
 
   useEffect(() => {
     console.log('Setting up auth state listener...');
@@ -27,12 +28,24 @@ function App() {
       setLoading(false);
     });
 
-    // We don't need to listen for a specific game here
-    // The PublicView component handles its own data fetching based on URL params
+    // Listen for the current game to update public view
+    // Note: You'll need to modify this to listen to the specific game for the public view
+    const gameRef = doc(db, 'games', 'YOUR_CURRENT_GAME_ID');
+    const unsubscribeGame = onSnapshot(gameRef, (doc) => {
+      if (doc.exists()) {
+        const gameData = {
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date()
+        };
+        setPublicGameData(gameData);
+      }
+    });
 
     // Cleanup subscriptions
     return () => {
       unsubscribeAuth();
+      unsubscribeGame();
     };
   }, []);
 
@@ -54,10 +67,15 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/game/new" element={<GameSetup />} />
         <Route path="/game/:gameId" element={<GameView />} />
-        {/* Public View Route - Using URL params directly */}
+        {/* New Public View Route */}
         <Route 
           path="/public/:gameId" 
-          element={<PublicView />} 
+          element={
+            <PublicView 
+              gameData={publicGameData} 
+              onUpdateGame={setPublicGameData} 
+            />
+          } 
         />
         <Route path="/event/:eventId" element={<EventDetails />} />
         <Route path="/game-history/:gameId" element={<GameHistory />} />

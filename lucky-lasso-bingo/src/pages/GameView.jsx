@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import Header from '../components/layout/Header';
 import PublicView from './PublicView';
@@ -35,11 +35,6 @@ const GameView = () => {
   
   // End game modal state
   const [showEndGameModal, setShowEndGameModal] = useState(false);
-  
-  // Post-game workflow modal state
-  const [showPostGameModal, setShowPostGameModal] = useState(false);
-  const [availableGames, setAvailableGames] = useState([]);
-  const [loadingGames, setLoadingGames] = useState(false);
   
   // Public view toggle state
   const [showPublicView, setShowPublicView] = useState(false);
@@ -288,36 +283,6 @@ const GameView = () => {
     setRoundingLoss(totalLoss);
   };
   
-  // Fetch available games from the current event
-  const fetchAvailableGames = async () => {
-    if (!game || !game.eventId) return;
-    
-    setLoadingGames(true);
-    try {
-      // Query for games that are ready or in_progress from the same event
-      const gamesQuery = query(
-        collection(db, 'games'),
-        where('eventId', '==', game.eventId),
-        where('status', 'in', ['ready', 'in_progress'])
-      );
-      
-      const querySnapshot = await getDocs(gamesQuery);
-      const gamesList = querySnapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date()
-        }))
-        .filter(g => g.id !== gameId); // Exclude current game
-      
-      setAvailableGames(gamesList);
-    } catch (err) {
-      console.error('Error fetching available games:', err);
-    } finally {
-      setLoadingGames(false);
-    }
-  };
-  
   // Finalize the game and record results
   const finalizeGame = async (e) => {
     e.preventDefault();
@@ -346,10 +311,8 @@ const GameView = () => {
         roundingLoss: roundingLossCalc
       });
       
-      // Close the end game modal and show the post-game workflow modal
-      setShowEndGameModal(false);
-      await fetchAvailableGames();
-      setShowPostGameModal(true);
+      alert('Game has ended and payouts have been recorded.');
+      navigate('/dashboard');
     } catch (err) {
       console.error('Error finalizing game:', err);
       alert('Failed to save game results. Please try again.');
@@ -799,69 +762,6 @@ const GameView = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-        )}
-        
-        {/* Post-Game Workflow Modal */}
-        {showPostGameModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-              <h2 className="text-2xl font-bold text-deep-sage mb-4">What's Next?</h2>
-              
-              <p className="text-deep-sage mb-4">
-                Game #{game.gameNumber} has ended. What would you like to do next?
-              </p>
-              
-              {loadingGames ? (
-                <div className="text-center py-4">
-                  <p className="text-deep-sage">Loading available games...</p>
-                </div>
-              ) : (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-deep-sage mb-2">Available Games</h3>
-                  
-                  {availableGames.length > 0 ? (
-                    <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
-                      {availableGames.map(g => (
-                        <div 
-                          key={g.id}
-                          className="p-3 border border-gray-200 rounded-md hover:bg-lilac hover:bg-opacity-10 cursor-pointer"
-                          onClick={() => navigate(`/game/${g.id}`)}
-                        >
-                          <p className="font-medium text-deep-sage">Game #{g.gameNumber}</p>
-                          <p className="text-sm text-gray-600">Pattern: {g.patternName}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-600 mb-4">No other games are ready to start for this event.</p>
-                  )}
-                </div>
-              )}
-              
-              <div className="flex flex-col space-y-3">
-                <button
-                  onClick={() => navigate(`/game/new?event=${game.eventId}`)}
-                  className="w-full py-2 px-4 bg-olivine text-white rounded-md"
-                >
-                  Create New Game for This Event
-                </button>
-                
-                <button
-                  onClick={() => navigate(`/event/${game.eventId}`)}
-                  className="w-full py-2 px-4 bg-bluebell text-white rounded-md"
-                >
-                  Return to Event Details
-                </button>
-                
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="w-full py-2 px-4 bg-gray-200 text-deep-sage rounded-md"
-                >
-                  Go to Dashboard
-                </button>
-              </div>
             </div>
           </div>
         )}
